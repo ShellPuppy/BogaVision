@@ -235,7 +235,7 @@ namespace BogaVision
                             var title = GetWindowTitle(hwnd);
                             if (!string.IsNullOrEmpty(title))
                             {
-                                if (Settings.IgnoreWindows.Any(t => t.ToLower().Contains(title)))
+                                if (Settings.IgnoreWindows.Any(t => title.ToLower().Contains(t.ToLower())))
                                 {
                                     // Don't want CHAT to see connection codes!
                                     return;

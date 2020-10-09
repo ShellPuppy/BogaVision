@@ -6,5 +6,6 @@
 		<string>teamviewer</string>
 		<string>zoho</string>
 	<string>calculator</string>
+  <string>ip camera</string>
 	</IgnoreWindows>
 </ServerSettings>
