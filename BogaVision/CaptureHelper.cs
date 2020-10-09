@@ -66,21 +66,26 @@ namespace Composition.WindowsRuntimeHelpers
 
         public static GraphicsCaptureItem CreateItemForWindow(IntPtr hwnd)
         {
-            var factory = WindowsRuntimeMarshal.GetActivationFactory(typeof(GraphicsCaptureItem));
-            var interop = (IGraphicsCaptureItemInterop)factory;
-            var temp = typeof(GraphicsCaptureItem);           
-            var itemPointer = interop.CreateForWindow(hwnd, GraphicsCaptureItemGuid);
-            var item = Marshal.GetObjectForIUnknown(itemPointer) as GraphicsCaptureItem;
-            Marshal.Release(itemPointer);
+            try
+            {
+                var factory = WindowsRuntimeMarshal.GetActivationFactory(typeof(GraphicsCaptureItem));
+                var interop = (IGraphicsCaptureItemInterop)factory;
+                var temp = typeof(GraphicsCaptureItem);
+                var itemPointer = interop.CreateForWindow(hwnd, GraphicsCaptureItemGuid);
+                var item = Marshal.GetObjectForIUnknown(itemPointer) as GraphicsCaptureItem;
+                Marshal.Release(itemPointer);
+                return item;
+            }
+            catch { }
 
-            return item;
+            return null;
         }
 
         public static GraphicsCaptureItem CreateItemForMonitor(IntPtr hmon)
         {
             var factory = WindowsRuntimeMarshal.GetActivationFactory(typeof(GraphicsCaptureItem));
             var interop = (IGraphicsCaptureItemInterop)factory;
-            var temp = typeof(GraphicsCaptureItem);         
+            var temp = typeof(GraphicsCaptureItem);
             var itemPointer = interop.CreateForMonitor(hmon, GraphicsCaptureItemGuid);
             var item = Marshal.GetObjectForIUnknown(itemPointer) as GraphicsCaptureItem;
             Marshal.Release(itemPointer);

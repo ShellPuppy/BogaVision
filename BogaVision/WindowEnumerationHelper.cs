@@ -128,35 +128,53 @@ namespace BogaVision
 
         public static bool IsWindowValidForCapture(IntPtr hwnd)
         {
-            if (hwnd.ToInt32() == 0)
-            {
-                return false;
-            }
+            if (hwnd == IntPtr.Zero) return false;
 
-            if (hwnd == GetShellWindow())
+            try
             {
-                return false;
-            }
 
-            if (!IsWindowVisible(hwnd))
-            {
-                return false;
-            }
 
-            if (GetAncestor(hwnd, GetAncestorFlags.GetRoot) != hwnd)
-            {
-                return false;
-            }
+                if (hwnd == GetShellWindow())
+                {
+                    return false;
+                }
 
-            var style = (WindowStyles)(uint)GetWindowLongPtr(hwnd, (int)GWL.GWL_STYLE);
-            if (style.HasFlag(WindowStyles.WS_DISABLED))
-            {
-                return false;
-            }
+                if (!IsWindowVisible(hwnd))
+                {
+                    return false;
+                }
 
-            var cloaked = false;
-            var hrTemp = DwmGetWindowAttribute(hwnd, DWMWINDOWATTRIBUTE.Cloaked, out cloaked, Marshal.SizeOf<bool>());
-            if (hrTemp == 0 && cloaked)
+                if (GetAncestor(hwnd, GetAncestorFlags.GetRoot) != hwnd)
+                {
+                    return false;
+                }
+
+
+                try
+                {
+
+                    IntPtr ptr = GetWindowLongPtr(hwnd, -16);
+
+                    uint us = (uint)ptr.ToInt32();
+
+                    var style = (WindowStyles)us;
+
+                    if (style.HasFlag(WindowStyles.WS_DISABLED))
+                    {
+                        return false;
+                    }
+
+                }
+                catch { }
+
+                var cloaked = false;
+                var hrTemp = DwmGetWindowAttribute(hwnd, DWMWINDOWATTRIBUTE.Cloaked, out cloaked, Marshal.SizeOf<bool>());
+                if (hrTemp == 0 && cloaked)
+                {
+                    return false;
+                }
+            }
+            catch (Exception ex)
             {
                 return false;
             }

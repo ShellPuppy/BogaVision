@@ -56,37 +56,34 @@ namespace BogaVision
         public bool NotGettingFrames => (DateTime.Now - LastTimeIGotAFrame).TotalSeconds > 1.5;
 
         //Use this to start capturing a new window
-        public void Start(IntPtr HWND)
+        public bool Start(IntPtr HWND)
         {
             try
             {
                 //Invalid window handle
-                if (HWND == IntPtr.Zero) return;
-
-                ////Can't capture from this window
-                //if (!WindowEnumerationHelper.IsWindowValidForCapture(HWND))
-                //{
-                //    return;
-                //}
+                if (HWND == IntPtr.Zero) return false;
 
                 var windowitem = CaptureHelper.CreateItemForWindow(HWND);
 
                 if (windowitem == null)
                 {
                     Console.WriteLine($"Could not create CaptureItem for : {HWND}");
-                    return;
+                    return false;
                 }
-
+               
                 LastTimeIGotAFrame = DateTime.Now;
 
                 StartCapturing(windowitem);
 
+                return true;
             }
             catch (Exception ex)
             {
                 //TODO Log this error?
                 Console.WriteLine($"Error (Start) : {ex.Message}");
             }
+
+            return false;
         }
 
         private void StartCapturing(GraphicsCaptureItem item)
@@ -119,9 +116,12 @@ namespace BogaVision
                 {
                     StopCapture();
                 };
+
                 if (framepool != null && captureitem != null)
                 {
                     capturesession = framepool.CreateCaptureSession(captureitem);
+                    
+                    capturesession.IsCursorCaptureEnabled = true;
 
                     capturesession.StartCapture();
                 }

@@ -172,6 +172,7 @@ namespace BogaVision
                         ScreenCaptureService?.StopCapture();
                         ScreenCaptureService = null;
                         CurrentForegroundWindow = IntPtr.Zero;
+                        BadHWNDs?.Clear();
                     }
                 }
 
@@ -200,7 +201,7 @@ namespace BogaVision
 
         }
 
-
+        private HashSet<IntPtr> BadHWNDs { get; set; } = new HashSet<IntPtr>();
         private void WindowWatcherTimer_Elapsed(object sender, ElapsedEventArgs e)
         {
             if (!CurrentlyCapturing) return;
@@ -219,7 +220,7 @@ namespace BogaVision
 
                 var hwnd = GetForegroundWindow();
 
-                if (hwnd != CurrentForegroundWindow && hwnd != IntPtr.Zero)
+                if (hwnd != CurrentForegroundWindow && hwnd != IntPtr.Zero && !BadHWNDs.Contains(hwnd))
                 {
                     if (WindowEnumerationHelper.IsWindowValidForCapture(hwnd))
                     {
@@ -242,7 +243,11 @@ namespace BogaVision
                         ScreenCaptureService?.StopCapture();
                         ScreenCaptureService = new CaptureService();
                         CurrentForegroundWindow = hwnd;
-                        ScreenCaptureService.Start(hwnd);
+                        bool itworked = ScreenCaptureService.Start(hwnd);
+                        if(itworked == false && !BadHWNDs.Contains(hwnd))
+                        {
+                            BadHWNDs.Add(hwnd);
+                        }
                     }
                 }
 
