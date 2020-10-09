@@ -120,8 +120,6 @@ namespace BogaVision
                 if (framepool != null && captureitem != null)
                 {
                     capturesession = framepool.CreateCaptureSession(captureitem);
-                    
-                    capturesession.IsCursorCaptureEnabled = true;
 
                     capturesession.StartCapture();
                 }

@@ -202,14 +202,18 @@ namespace BogaVision
         }
 
         private HashSet<IntPtr> BadHWNDs { get; set; } = new HashSet<IntPtr>();
+        private bool WindowWatcherWorking { get; set; } = false;
         private void WindowWatcherTimer_Elapsed(object sender, ElapsedEventArgs e)
         {
             if (!CurrentlyCapturing) return;
+            if (WindowWatcherWorking) return;
+            
+            Console.Write(".");
 
             try
             {
                 //Diable the timer while its processing (so we don't get multiple triggers)
-                WindowWatcherTimer.Enabled = false;
+                WindowWatcherWorking = true;
 
                 //What for issues with the screen capture service
                 if (ScreenCaptureService?.NotGettingFrames == true)
@@ -256,7 +260,7 @@ namespace BogaVision
             finally
             {
                 //Re-enable the timer
-                WindowWatcherTimer.Enabled = true;
+                WindowWatcherWorking = false;
             }
 
         }

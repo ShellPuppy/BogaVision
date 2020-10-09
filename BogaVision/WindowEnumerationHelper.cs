@@ -174,7 +174,7 @@ namespace BogaVision
                     return false;
                 }
             }
-            catch (Exception ex)
+            catch 
             {
                 return false;
             }
