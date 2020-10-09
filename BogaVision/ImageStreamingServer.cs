@@ -5,13 +5,12 @@ using System.Timers;
 using System.Net;
 using System.Net.Sockets;
 using System.Collections.Concurrent;
-using FrameServer;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 using System.Text;
 
 
-namespace BogaServer
+namespace BogaVision
 {
 
 
@@ -24,7 +23,7 @@ namespace BogaServer
 
         [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
         static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
-        
+
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
         static extern int GetWindowTextLength(IntPtr hWnd);
         #endregion
@@ -116,7 +115,7 @@ namespace BogaServer
                     socket.SendBufferSize = 8192;
 
                     socket.DontFragment = true;
-                    
+
                     wr.WriteHeader();
 
                     while (socket.Connected)
@@ -128,7 +127,7 @@ namespace BogaServer
 
                 }
             }
-            catch 
+            catch
             {
                 //Exception is thrown when the connection is closed
             }
@@ -136,8 +135,8 @@ namespace BogaServer
             {
                 //Stop tracking this socket
                 Console.WriteLine($"Connection Closed {SocketID}");
-                if(socket == null || !socket.Connected )
-                ClientConnections.TryRemove(SocketID, out Socket _);
+                if (socket == null || !socket.Connected)
+                    ClientConnections.TryRemove(SocketID, out Socket _);
             }
         }
 
@@ -202,53 +201,57 @@ namespace BogaServer
         }
 
 
-        private bool ImHandlingAWindowEvent { get; set; } = false;
         private void WindowWatcherTimer_Elapsed(object sender, ElapsedEventArgs e)
         {
-            if (!CurrentlyCapturing || ImHandlingAWindowEvent) return;
+            if (!CurrentlyCapturing) return;
 
             try
             {
-                ImHandlingAWindowEvent = true;
-                if (ScreenCaptureService != null && ScreenCaptureService.NotGettingFrames)
+                //Diable the timer while its processing (so we don't get multiple triggers)
+                WindowWatcherTimer.Enabled = false;
+
+                //What for issues with the screen capture service
+                if (ScreenCaptureService?.NotGettingFrames == true)
                 {
                     //Force a restart
                     CurrentForegroundWindow = IntPtr.Zero;
                 }
-            
 
                 var hwnd = GetForegroundWindow();
+
                 if (hwnd != CurrentForegroundWindow && hwnd != IntPtr.Zero)
                 {
-                    //make sure the window text is not restricted!
-
-                    if (Settings?.IgnoreWindows?.Any() == true)
+                    if (WindowEnumerationHelper.IsWindowValidForCapture(hwnd))
                     {
-                        var title = GetWindowTitle(hwnd);
-                        if (!string.IsNullOrEmpty(title))
+                        //make sure the window text is not restricted!
+
+                        if (Settings?.IgnoreWindows?.Any() == true)
                         {
-                            if (Settings.IgnoreWindows.Any(t => t.ToLower().Contains(title)))
+                            var title = GetWindowTitle(hwnd);
+                            if (!string.IsNullOrEmpty(title))
                             {
-                                // Don't want CHAT to see connection codes!
-                                return;
+                                if (Settings.IgnoreWindows.Any(t => t.ToLower().Contains(title)))
+                                {
+                                    // Don't want CHAT to see connection codes!
+                                    return;
+                                }
                             }
                         }
+
+
+                        ScreenCaptureService?.StopCapture();
+                        ScreenCaptureService = new CaptureService();
+                        CurrentForegroundWindow = hwnd;
+                        ScreenCaptureService.Start(hwnd);
                     }
-
-
-                    ScreenCaptureService?.StopCapture();
-                    ScreenCaptureService = new CaptureService() { EnableFrameGrabbing = true };
-                    CurrentForegroundWindow = hwnd;
-                    ScreenCaptureService.Start(hwnd);
                 }
-   
 
             }
             catch { }
             finally
             {
-                ImHandlingAWindowEvent = false;
-               // WindowWatcherTimer.Enabled = true;
+                //Re-enable the timer
+                WindowWatcherTimer.Enabled = true;
             }
 
         }

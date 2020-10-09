@@ -13,11 +13,11 @@ using SharpDX.DXGI;
 using MapFlags = SharpDX.Direct3D11.MapFlags;
 using System.Text;
 
-namespace FrameServer
+namespace BogaVision
 {
     public class CaptureService
     {
-        private SizeInt32 lastwindowsize;
+        private SizeInt32 lastwindowsize;                   //Remembers the size of the window from the last frame capture - use this to figureout if the size changed
         private GraphicsCaptureItem captureitem;
         private Direct3D11CaptureFramePool framepool;
         private GraphicsCaptureSession capturesession;
@@ -26,9 +26,10 @@ namespace FrameServer
         private ImagingFactory factory;
         private DateTime LastTimeIGotAFrame { get; set; }
 
+
+        private SharpDX.Direct3D11.Multithread _multithread;
         private Object _lockOnMe = new Object(); //Prevent cross thread memory violations with this one simple trick
 
-        public bool EnableFrameGrabbing { get; set; } //Temporarily stop processing new frames (capturing still runs, but it doesn't copy  memory from gpu->cpu and then jpeg compress)
 
         public InMemoryRandomAccessStream CurrentFrame { get; set; } = null;
 
@@ -36,20 +37,15 @@ namespace FrameServer
         {
             try
             {
-                
+
                 //Dispose and clear out anything we created for the capture
-                capturesession?.Dispose();
-                framepool?.Dispose();
-
-                device?.Dispose();
-                d3dDevice?.Dispose();
+                capturesession?.Dispose(); capturesession = null;
+                framepool?.Dispose(); framepool = null;
+                device?.Dispose(); device = null;
+                d3dDevice?.Dispose(); d3dDevice = null;
                 captureitem = null;
-                capturesession = null;
-                framepool = null;
-
-                d3dDevice = null;
-                device = null;
-                CurrentFrame?.Dispose(); CurrentFrame = null;
+                CurrentFrame?.Dispose();
+                //_multithread?.Dispose(); 
             }
             catch (Exception ex)
             {
@@ -66,6 +62,12 @@ namespace FrameServer
             {
                 //Invalid window handle
                 if (HWND == IntPtr.Zero) return;
+
+                ////Can't capture from this window
+                //if (!WindowEnumerationHelper.IsWindowValidForCapture(HWND))
+                //{
+                //    return;
+                //}
 
                 var windowitem = CaptureHelper.CreateItemForWindow(HWND);
 
@@ -101,6 +103,8 @@ namespace FrameServer
                 factory = new ImagingFactory();
                 device = Direct3D11Helper.CreateDevice();
                 d3dDevice = Direct3D11Helper.CreateSharpDXDevice(device);
+                _multithread = d3dDevice.QueryInterface<SharpDX.Direct3D11.Multithread>();
+                _multithread.SetMultithreadProtected(true);
 
                 framepool = Direct3D11CaptureFramePool.CreateFreeThreaded(
                    device,
@@ -132,16 +136,10 @@ namespace FrameServer
         private void ProcessFrame(Direct3D11CaptureFramePool fp, object args)
         {
 #if DEBUG
-            //Console.Write("#");
+            Console.Write("#");
 #endif
-
-         
-
-            if (!EnableFrameGrabbing) return;  //Ignore this frame for now 
             try
             {
-
-
                 using (var frame = fp.TryGetNextFrame())
                 {
 
@@ -157,14 +155,14 @@ namespace FrameServer
 
                     try
                     {
-                        var t = Direct3D11Helper.CreateSharpDXTexture2D(frame.Surface);
-                        GetJpgFrame(t);
-                        t?.Dispose();
-                        t = null;
+                        using (var multithreadLock = new MultithreadLock(_multithread))
+                        using (var t = Direct3D11Helper.CreateSharpDXTexture2D(frame.Surface))
+                        {
+                            GetJpgFrame(t);
+                        }
                     }
-                    catch (Exception ex)
+                    catch
                     {
-                        Console.WriteLine(ex.Message);
                         needsReset = true;
                         recreateDevice = true;
                     }
@@ -274,11 +272,15 @@ namespace FrameServer
 
                     if (recreateDevice)
                     {
+                        //_multithread?.Dispose(); _multithread = null;
                         device?.Dispose(); device = null;
                         d3dDevice.Dispose(); d3dDevice = null;
 
                         device = Direct3D11Helper.CreateDevice();
                         d3dDevice = Direct3D11Helper.CreateSharpDXDevice(device);
+
+                        //_multithread = d3dDevice.QueryInterface<SharpDX.Direct3D11.Multithread>();
+                        //_multithread.SetMultithreadProtected(true);
                     }
 
                     framepool.Recreate(
@@ -287,13 +289,35 @@ namespace FrameServer
                         2,
                         size);
                 }
-                catch 
+                catch
                 {
                     device = null;
                     recreateDevice = true;
                 }
             } while (device == null);
         }
+
+
+        #region Multithread Protection
+
+        class MultithreadLock : IDisposable
+        {
+            public MultithreadLock(SharpDX.Direct3D11.Multithread multithread)
+            {
+                _multithread = multithread;
+                _multithread?.Enter();
+            }
+
+            public void Dispose()
+            {
+                _multithread?.Leave();
+                _multithread = null;
+            }
+
+            private SharpDX.Direct3D11.Multithread _multithread;
+        }
+
+        #endregion
 
 
         #region Write Image To Mjpeg Stream
@@ -313,7 +337,7 @@ namespace FrameServer
                             stream.WriteTimeout = 60000;
 
                             var ms = CurrentFrame.AsStreamForRead();
-                           
+
                             if (ms.Length <= 100) return false;
 
                             StringBuilder sb = new StringBuilder();
@@ -338,7 +362,7 @@ namespace FrameServer
                     }
                 }
             }
-            catch 
+            catch
             {
 
                 return false;

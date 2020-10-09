@@ -1,4 +1,4 @@
-﻿using BogaServer;
+﻿using BogaVision;
 using System.Linq;
 
 namespace BogaVision
