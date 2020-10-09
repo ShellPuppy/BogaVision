@@ -36,7 +36,12 @@ The address for the stream is  http://YourVM:6969 or you can use ip http://1.3.3
 You might have to open up the port if your firewall blocks it.
 
 
+# Viewing the Stream
 
-After some experimenting, it looks like Firefox works the best. Other browsers can't handle when the image size changes. You can also install an IP Camera app https://www.techspot.com/downloads/downloadnow/6474/?evp=9bb9bdd470c21adc9f991cb79475c0a7&file=1
+After some experimenting, it looks like Firefox works the best. Other browsers can't handle when the image size changes. 
 
+You can also install an IP Camera app https://www.techspot.com/downloads/downloadnow/6474/?evp=9bb9bdd470c21adc9f991cb79475c0a7&file=1
 
+Enter the IP adress of the VM, the port, select P2P for the Brand and Model of the camera
+
+![](BogaVision/Images/Settings.PNG)
