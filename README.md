@@ -1,6 +1,9 @@
 # BogaVision
 An app designed to let you see whats going on when a scammer blocks your screen.
 
+# Note: You must have .net core 3.1 x86 runtime installed. Also you must be running windows 1903 or later.
+
+
 # High-Level Overview
 This app runs silently on your vm. It waits for an http connection on a port you specify (default is 6969).
 When a connection is made with your browser (firefox/chrome) the app will start taking screenshots of the active window and then sends them to your browser as a mjpeg stream (security cams often use this protocol because its extremely simple)
