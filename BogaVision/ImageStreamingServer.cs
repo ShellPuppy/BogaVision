@@ -42,19 +42,14 @@ namespace BogaVision
 
         private bool AnyClients => ClientConnections?.Values.Any(s => s.Connected) == true;
 
-        public ImageStreamingServer()
-        {
-            CurrentForegroundWindow = GetForegroundWindow();
-        }
 
         public void StartTheShow()
         {
             //Load settings
+            Utils.Log("Loading settings");
             Settings = ServerSettings.LoadSettings("ServerSettings.xml");
 
             ClientConnections = new ConcurrentDictionary<Guid, Socket>();
-
-            var servertask = Task.Factory.StartNew(() => this.ServerThread(), TaskCreationOptions.LongRunning);
 
             WindowWatcherTimer = new Timer(200);
             WindowWatcherTimer.Elapsed += WindowWatcherTimer_Elapsed;
@@ -65,8 +60,10 @@ namespace BogaVision
             ConnectionWatcherTimer.Enabled = true;
 
             ConnectionWatcherTimer.Start();
-        }
 
+            //Start watching for connection in a new thread
+            Task.Factory.StartNew(() => this.ServerThread(), TaskCreationOptions.LongRunning);
+        }
 
 
         public void ServerThread()
@@ -79,8 +76,8 @@ namespace BogaVision
                 Server.Bind(new IPEndPoint(IPAddress.Any, Settings.Port));
                 Server.Listen(10);
 
-                System.Diagnostics.Debug.WriteLine(string.Format("Server started on port {0}.", Settings.Port));
-
+                Utils.Log($"Server started on port {Settings.Port}");
+                Utils.Log($"Waiting for connections");
 
                 foreach (Socket client in Server.IncommingConnections())
                     System.Threading.ThreadPool.QueueUserWorkItem(new System.Threading.WaitCallback(ClientThread), client);
@@ -88,7 +85,7 @@ namespace BogaVision
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
+                Utils.Log($"Error in server thread : {ex.Message}",true);
             }
 
         }
@@ -100,7 +97,7 @@ namespace BogaVision
 
             var SocketID = Guid.NewGuid();
 
-            Console.WriteLine($"Connection Open {SocketID}");
+            Utils.Log($"Connection created");
 
             ClientConnections.TryAdd(SocketID, socket);
 
@@ -134,7 +131,8 @@ namespace BogaVision
             finally
             {
                 //Stop tracking this socket
-                Console.WriteLine($"Connection Closed {SocketID}");
+                Utils.Log($"Connection Closed");
+
                 if (socket == null || !socket.Connected)
                     ClientConnections.TryRemove(SocketID, out Socket _);
             }
@@ -156,6 +154,8 @@ namespace BogaVision
                 {
                     if (CurrentlyCapturing) return; //We have clients watching and we are capturing....good!
 
+                    Utils.Log("Start the capturing service and watch for active windows");
+
                     //Start capturing
                     CurrentlyCapturing = true;
                     CurrentForegroundWindow = IntPtr.Zero;
@@ -166,6 +166,8 @@ namespace BogaVision
                 {
                     if (CurrentlyCapturing)
                     {
+                        Utils.Log("No active connections, stop capture service and wait...");
+
                         WindowWatcherTimer?.Stop();
                         WindowWatcherTimer.Enabled = false;
                         CurrentlyCapturing = false;
@@ -207,8 +209,7 @@ namespace BogaVision
         {
             if (!CurrentlyCapturing) return;
             if (WindowWatcherWorking) return;
-            
-            Console.Write(".");
+
 
             try
             {
@@ -238,6 +239,8 @@ namespace BogaVision
                                 if (Settings.IgnoreWindows.Any(t => title.ToLower().Contains(t.ToLower())))
                                 {
                                     // Don't want CHAT to see connection codes!
+                                    Utils.Log($"Oops we need to ignore this window : {title}");
+
                                     return;
                                 }
                             }

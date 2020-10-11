@@ -1,5 +1,4 @@
-﻿using BogaVision;
-using System.Linq;
+﻿using System.Linq;
 
 namespace BogaVision
 {
@@ -8,6 +7,8 @@ namespace BogaVision
 
         static void Main(string[] args)
         {
+            Utils.Log($"BogaVision Started");
+
             //Only allow one instance of this app to run at a time
             AlreadyRunning();
 
@@ -33,9 +34,11 @@ namespace BogaVision
 
             try
             {
+                Utils.Log($"Checking for existing instances of BogaVision");
 
                 foreach (var pr in System.Diagnostics.Process.GetProcessesByName(thisproc.ProcessName).Where(p => p.Id != thisproc.Id))
                 {
+                    Utils.Log($"Closing existing instance : {pr.Id}");
                     pr.Kill();
                 }
             }

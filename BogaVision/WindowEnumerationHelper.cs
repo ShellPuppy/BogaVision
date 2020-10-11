@@ -152,10 +152,15 @@ namespace BogaVision
 
                 try
                 {
+                   
 
                     IntPtr ptr = GetWindowLongPtr(hwnd, -16);
+                    
+              
 
-                    uint us = (uint)ptr.ToInt32();
+                    uint us = (uint)ptr.ToInt64();
+
+
 
                     var style = (WindowStyles)us;
 

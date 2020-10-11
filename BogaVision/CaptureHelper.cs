@@ -76,7 +76,10 @@ namespace Composition.WindowsRuntimeHelpers
                 Marshal.Release(itemPointer);
                 return item;
             }
-            catch { }
+            catch (Exception ex)
+            {
+            
+            }
 
             return null;
         }

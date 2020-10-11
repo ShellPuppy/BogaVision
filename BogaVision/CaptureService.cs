@@ -28,7 +28,7 @@ namespace BogaVision
 
 
         private SharpDX.Direct3D11.Multithread _multithread;
-        private Object _lockOnMe = new Object(); //Prevent cross thread memory violations with this one simple trick
+        private static readonly Object _lockOnMe = new Object(); //Prevent cross thread memory violations with this one simple trick
 
 
         public InMemoryRandomAccessStream CurrentFrame { get; set; } = null;
@@ -67,20 +67,20 @@ namespace BogaVision
 
                 if (windowitem == null)
                 {
-                    Console.WriteLine($"Could not create CaptureItem for : {HWND}");
+                    Utils.Log($"Could not create CaptureItem for : {HWND}", true);
                     return false;
                 }
-               
-                LastTimeIGotAFrame = DateTime.Now;
 
                 StartCapturing(windowitem);
+
+                LastTimeIGotAFrame = DateTime.Now;
 
                 return true;
             }
             catch (Exception ex)
             {
                 //TODO Log this error?
-                Console.WriteLine($"Error (Start) : {ex.Message}");
+                Utils.Log($"Error (Start) : {ex.Message}", true);
             }
 
             return false;
@@ -93,7 +93,7 @@ namespace BogaVision
                 // Stop the previous capture if we had one
                 StopCapture();
 
-                Console.WriteLine($"Capturing Window: {item.DisplayName}");
+                Utils.Log($"Capturing Window: {item.DisplayName}");
 
                 captureitem = item;
                 lastwindowsize = captureitem.Size;
@@ -112,10 +112,10 @@ namespace BogaVision
                 //Setup a handler for when a new frame is ready
                 framepool.FrameArrived += ProcessFrame;
 
-                captureitem.Closed += (s, a) =>
-                {
-                    StopCapture();
-                };
+                //captureitem.Closed += (s, a) =>
+                //{
+                //    StopCapture();
+                //};
 
                 if (framepool != null && captureitem != null)
                 {
@@ -133,11 +133,9 @@ namespace BogaVision
 
         private void ProcessFrame(Direct3D11CaptureFramePool fp, object args)
         {
-#if DEBUG
-            Console.Write("#");
-#endif
             try
             {
+                using (var multithreadLock = new MultithreadLock(_multithread))
                 using (var frame = fp.TryGetNextFrame())
                 {
 
@@ -153,7 +151,7 @@ namespace BogaVision
 
                     try
                     {
-                        using (var multithreadLock = new MultithreadLock(_multithread))
+
                         using (var t = Direct3D11Helper.CreateSharpDXTexture2D(frame.Surface))
                         {
                             GetJpgFrame(t);
@@ -216,40 +214,41 @@ namespace BogaVision
                 bmp = new Bitmap(factory, copy.Description.Width, copy.Description.Height, format, rect);
 
 
-                lock (_lockOnMe)
+                //lock (_lockOnMe)
                 {
                     CurrentFrame?.Dispose(); CurrentFrame = null;
                     CurrentFrame = new InMemoryRandomAccessStream();
-                }
 
-                if (CurrentFrame == null) return;
 
-                lock (CurrentFrame)
-                {
-                    var ms = CurrentFrame.AsStream(); // Do not dispose here
-                    using (var wic = new WICStream(factory, ms))
-                    using (var encoder = new JpegBitmapEncoder(factory, wic))
-                    using (var frame = new BitmapFrameEncode(encoder))
+                    if (CurrentFrame == null) return;
+
+                    lock (CurrentFrame)
                     {
+                        var ms = CurrentFrame.AsStream(); // Do not dispose here
+                        using (var wic = new WICStream(factory, ms))
+                        using (var encoder = new JpegBitmapEncoder(factory, wic))
+                        using (var frame = new BitmapFrameEncode(encoder))
+                        {
 
-                        frame.Initialize();
-                        frame.SetSize(bmp.Size.Width, bmp.Size.Height);
-                        frame.SetPixelFormat(ref format);
-                        frame.WriteSource(bmp);
-                        frame.Commit();
-                        encoder.Commit();
+                            frame.Initialize();
+                            frame.SetSize(bmp.Size.Width, bmp.Size.Height);
+                            frame.SetPixelFormat(ref format);
+                            frame.WriteSource(bmp);
+                            frame.Commit();
+                            encoder.Commit();
+                        }
+
                     }
 
+                    d3dDevice?.ImmediateContext.UnmapSubresource(copy, 0);
                 }
-
-                d3dDevice?.ImmediateContext.UnmapSubresource(copy, 0);
 
                 LastTimeIGotAFrame = DateTime.Now;
             }
             catch (Exception ex)
             {
 
-                Console.WriteLine($"Failed to GetBitMap : {ex.Message}");
+                Utils.Log($"Failed to get screen shot : {ex.Message}", true);
             }
             finally
             {
@@ -270,15 +269,16 @@ namespace BogaVision
 
                     if (recreateDevice)
                     {
-                        //_multithread?.Dispose(); _multithread = null;
+                        _multithread?.SetMultithreadProtected(false);
+                        _multithread?.Dispose(); _multithread = null;
                         device?.Dispose(); device = null;
                         d3dDevice.Dispose(); d3dDevice = null;
 
                         device = Direct3D11Helper.CreateDevice();
                         d3dDevice = Direct3D11Helper.CreateSharpDXDevice(device);
 
-                        //_multithread = d3dDevice.QueryInterface<SharpDX.Direct3D11.Multithread>();
-                        //_multithread.SetMultithreadProtected(true);
+                        _multithread = d3dDevice.QueryInterface<SharpDX.Direct3D11.Multithread>();
+                        _multithread.SetMultithreadProtected(true);
                     }
 
                     framepool.Recreate(
