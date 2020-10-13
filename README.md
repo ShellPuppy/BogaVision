@@ -1,7 +1,7 @@
 # BogaVision
 An app designed to let you see whats going on when a scammer blocks your screen.
 
-# Note: You must have .net core 3.1 x86 runtime installed. Also you must be running windows 1903 or later.
+# Note: You must have [.net core 3.1 x86 runtime](https://dotnet.microsoft.com/download/dotnet-core/thank-you/runtime-desktop-3.1.9-windows-x86-installer) installed. Also you must be running windows 1903 or later.
 
 
 # High-Level Overview
