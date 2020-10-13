@@ -32,7 +32,7 @@ You may have to install .net core 3.1 runtime on the vm (if it isn't there now)
 
 Also, you have to install .net core 3.1 sdk if you want to compile this. (its in visual studio installer)
 
-In theory you can set OBS to connect to your stream, but I found it lacks stability and just acts werid. Firefox works like a charm. Sometimes your connection will drop, you just have to hit f5 to restart.
+In theory you can set OBS to connect to your stream, but I found it lacks stability and just acts weird. Firefox works like a charm. Sometimes your connection will drop, you just have to hit f5 to restart.
 
 The address for the stream is  http://YourVM:6969 or you can use ip http://1.3.3.7:6969
 
