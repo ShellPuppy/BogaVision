@@ -1,7 +1,7 @@
 # BogaVision
 An app designed to let you see whats going on when a scammer blocks your screen.
 
-# Note: You must have .net core 3.1 x86 runtime installed. Also you must be running windows 1903 or later.
+# Note: You must have [.net core 3.1 x86 runtime](https://dotnet.microsoft.com/download/dotnet-core/thank-you/runtime-desktop-3.1.9-windows-x86-installer) installed. Also you must be running [Windows 1903](https://www.microsoft.com/en-us/software-download/windows10) or later.
 
 
 # High-Level Overview
@@ -32,7 +32,7 @@ You may have to install .net core 3.1 runtime on the vm (if it isn't there now)
 
 Also, you have to install .net core 3.1 sdk if you want to compile this. (its in visual studio installer)
 
-In theory you can set OBS to connect to your stream, but I found it lacks stability and just acts werid. Firefox works like a charm. Sometimes your connection will drop, you just have to hit f5 to restart.
+In theory you can set OBS to connect to your stream, but I found it lacks stability and just acts weird. Firefox works like a charm. Sometimes your connection will drop, you just have to hit f5 to restart.
 
 The address for the stream is  http://YourVM:6969 or you can use ip http://1.3.3.7:6969
 
