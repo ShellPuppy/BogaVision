@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 
 namespace BogaVision
 {
@@ -14,7 +15,7 @@ namespace BogaVision
 
             var Server = new ImageStreamingServer();
 
-            Server.StartTheShow();
+            Task.Factory.StartNew(() => Server.StartTheShow(),TaskCreationOptions.LongRunning);
 
             //Don't exit - let the server wait for new connections
             while (true)

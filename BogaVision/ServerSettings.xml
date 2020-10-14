@@ -5,7 +5,9 @@
 	<IgnoreWindows>
 		<string>teamviewer</string>
 		<string>zoho</string>
-	<string>calculator</string>
-  <string>ip camera</string>
+		<string>anydesk</string>
+		<string>connect by id</string>
+		<string>connection info</string>
+		<string>litemanager</string>
 	</IgnoreWindows>
 </ServerSettings>

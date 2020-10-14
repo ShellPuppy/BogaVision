@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml.Serialization;
 
 namespace BogaVision
@@ -35,9 +32,7 @@ namespace BogaVision
 
                 using (var sww = new FileStream(FileName, FileMode.OpenOrCreate))
                 {
-
                     xs.Serialize(sww, data);
-
                 }
             }
             catch (Exception ex)

@@ -362,7 +362,6 @@ namespace BogaVision
             }
             catch
             {
-
                 return false;
             }
 
@@ -370,9 +369,14 @@ namespace BogaVision
         }
         private void Write(Stream stream, string text)
         {
-            byte[] data = Encoding.ASCII.GetBytes(text);
-            stream.Write(data, 0, data.Length);
+            try
+            {
+                byte[] data = Encoding.ASCII.GetBytes(text);
+                stream.Write(data, 0, data.Length);
+            }
+            catch { }
         }
+
         #endregion
 
 
