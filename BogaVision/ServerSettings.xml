@@ -9,5 +9,7 @@
 		<string>connect by id</string>
 		<string>connection info</string>
 		<string>litemanager</string>
+		<string>ultraviewer</string>
+		<string>supremo</string>
 	</IgnoreWindows>
 </ServerSettings>
